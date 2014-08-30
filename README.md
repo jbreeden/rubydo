@@ -31,7 +31,6 @@ ruby::without_gvl( DO [&](){
     rb_funcall(rb_mKernel, rb_intern("puts"), 1, some_rb_string);
   } END;
   
-  
   result = some_rb_string;
 } END, DO [](){ /* unblock */ } END);
 
@@ -66,3 +65,10 @@ int main (int argc, char** argv) {
   cout << "Thread joined" << endl;
 }
 ```
+
+OUTPUT:
+
+In create_thread
+Thread created
+In the ruby thread
+Thread joined
