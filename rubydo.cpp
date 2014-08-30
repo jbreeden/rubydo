@@ -69,7 +69,7 @@ namespace ruby {
   //    ruby::without_gvl( DO [&]() {
   //      /* GVL is released, this code will execute in parallel to any ruby threads */
   //      result = some_rb_string;
-  //    } END, DO [](){ /* unblock */ } );
+  //    } END, DO [](){ /* unblock */ } END);
   //
   //    /* Now that we have the GVL again, it's safe to call ruby methods */
   //    rb_funcall(rb_mKernel, rb_intern("puts"), 1, result);
