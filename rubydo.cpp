@@ -2,6 +2,8 @@
 #include "ruby.h"
 #include "ruby/thread.h"
 
+// Helper functions
+// ----------------
 namespace {
 
   void invoke(void* arg) {
@@ -35,11 +37,15 @@ namespace {
     }
     return Qnil;
   }
-
 }
 
 namespace ruby {
 
+  // init
+  // ----
+  // Initializes the ruby vm, and requires a few ruby modules
+  // needed to allow some of the standard libraries to load correctly.
+  // ----
   void init(int argc, char** argv) {
     ruby_sysinit(&argc, &argv);
     RUBY_INIT_STACK;
@@ -49,10 +55,42 @@ namespace ruby {
     rb_require("enc/trans/transdb");
   }
 
+  // without_gvl
+  // -----------
+  // Releases the GVL, executes the given DO_BLOCK `func`, and re-obtains the GVL.
+  // If ruby needs to unblock `func` for any reason (such as an interrupt signal
+  // has been given, or the thread is killed) then `ubf` will be called. `ubf`
+  // is then responsible for unblocking `func` by some means.
+  //
+  // EXAMPLE:
+  //
+  //    /* Running some code with the GVL... */
+  //    VALUE result;
+  //    ruby::without_gvl( DO [&]() {
+  //      /* GVL is released, this code will execute in parallel to any ruby threads */
+  //      result = some_rb_string;
+  //    } END, DO [](){ /* unblock */ } );
+  //
+  //    /* Now that we have the GVL again, it's safe to call ruby methods */
+  //    rb_funcall(rb_mKernel, rb_intern("puts"), 1, result);
+  // -----------
   void without_gvl(DO_BLOCK func, DO_BLOCK ubf) {
     rb_thread_call_without_gvl(invoke_returning_null_ptr, &func, invoke, &ubf);
   }
 
+  // with_gvl
+  // --------
+  // Obtains the GVL, executes the given DO_BLOCK `func`, and releases the GVL
+  //
+  // EXAMPLE:
+  //
+  //    /* Running some code without the GVL... */
+  //    VALUE message = some_rb_string;
+  //    ruby::with_gvl DO [&]() {
+  //      /* Now that we have the GVL again, it's safe to call ruby methods */
+  //      rb_funcall(rb_mKernel, rb_intern("puts"), 1, message);
+  //    } END;
+  // --------
   void with_gvl(DO_BLOCK func) {
     rb_thread_call_with_gvl(invoke_returning_null_ptr, &func);
   }
