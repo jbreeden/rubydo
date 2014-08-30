@@ -68,7 +68,7 @@ int main (int argc, char** argv) {
 
 OUTPUT:
 
-In create_thread
-Thread created
-In the ruby thread
-Thread joined
+In create_thread  
+Thread created  
+In the ruby thread  
+Thread joined  
