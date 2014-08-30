@@ -53,14 +53,14 @@ VALUE create_thread () {
   VALUE thread = ruby::thread DO [&, message] () {
    rb_funcall(rb_mKernel, rb_intern("puts"), 1, message);
   } END;
-
-  cout << "Thread created" << endl;
+  
   return thread;
 }
 
 int main (int argc, char** argv) {
   ruby::init(argc, argv);
   auto thread = create_thread();
+  cout << "Thread created" << endl;
   rb_funcall(thread, rb_intern("join"), 0);
   cout << "Thread joined" << endl;
 }
