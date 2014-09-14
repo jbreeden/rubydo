@@ -12,12 +12,42 @@
 #include <functional>
 #include <memory>
 
-
+// DO_BLOCK Macros
+// TODO: Could probably do this without the shared_pts's
 #define DO_BLOCK std::shared_ptr<std::function<void()>>
 #define DO (DO_BLOCK(new std::function<void()>(
 #define END )))
 
-namespace ruby {
+namespace rubydo {
+
+  typedef std::function<VALUE(VALUE self, int argc, VALUE* argv)> Method;
+
+  namespace internal {
+    
+    // Internal Data
+    // ------------
+    
+    const char method_lookup_table_iv_name[] = "rubydo_methods";
+      
+    // The Ruby class that will a MethodWrapper is held in when inserted into the method lookup table
+    extern VALUE cRubydoMethod;
+    
+    // A struct type used to hold Method objects so we can Data_Wrap_Struct them
+    struct MethodWrapper {
+      Method implementation;
+    };
+    
+    // Internal Helper Functions
+    // ------------------------
+    
+    VALUE invoke_instance_method(int argc, VALUE* argv, VALUE self);
+    
+    template <class PtrType>
+    void deleter (PtrType ptr) {
+      delete ptr;
+    }
+  }
+
   void init(int argc, char** argv);
   void without_gvl(DO_BLOCK, DO_BLOCK);
   void with_gvl(DO_BLOCK);
@@ -28,4 +58,3 @@ namespace ruby {
 }
 
 #endif
-
