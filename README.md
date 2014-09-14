@@ -20,7 +20,7 @@ Usage
 Initializing Ruby
 -----------------
 
-```
+```C++
 /* initializing ruby */
 ruby::init(argc, argv);
 ```
@@ -28,7 +28,7 @@ ruby::init(argc, argv);
 Using the GVL
 -------------
   
-```
+```C++
 VALUE result;
 ruby::without_gvl( DO [&](){
   /* GVL is released, this code will execute in parallel to any other ruby threads */
@@ -50,7 +50,7 @@ rb_funcall(rb_mKernel, rb_intern("puts"), 1, result);
 Launching a Ruby Thread
 -----------------------
 
-```
+```C++
 VALUE create_thread () {
   cout << "In create_thread" << endl;
   VALUE message = rb_str_new_cstr("In the ruby thread");
