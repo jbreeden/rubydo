@@ -4,7 +4,7 @@ def test(desc)
     puts "Succeeded"
   else
     puts "Failed"
-   end
+  end
 end
 
 begin
