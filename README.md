@@ -22,7 +22,7 @@ Initializing Ruby
 
 ```C++
 /* initializing ruby */
-ruby::init(argc, argv);
+rubydo::init(argc, argv);
 ```
 
 Using the GVL
@@ -30,13 +30,13 @@ Using the GVL
   
 ```C++
 VALUE result;
-ruby::without_gvl( DO [&](){
+rubydo::without_gvl( DO [&](){
   /* GVL is released, this code will execute in parallel to any other ruby threads */
   
   /* Doing some heavy computation... */
   
   /* Need to call a ruby method, grab the GVL */
-  ruby::with_gvl DO [&]() {
+  rubydo::with_gvl DO [&]() {
     rb_funcall(rb_mKernel, rb_intern("puts"), 1, some_rb_string);
   } END;
   
@@ -59,7 +59,7 @@ VALUE create_thread () {
      so even if this method returns before the new thread is scheduled,
      the lambda will still exist. Once the thread exists, it releases
      it's copy of the shared_ptr */
-  VALUE thread = ruby::thread DO [&, message] () {
+  VALUE thread = rubydo::thread DO [&, message] () {
    rb_funcall(rb_mKernel, rb_intern("puts"), 1, message);
   } END;
   
@@ -67,7 +67,7 @@ VALUE create_thread () {
 }
 
 int main (int argc, char** argv) {
-  ruby::init(argc, argv);
+  rubydo::init(argc, argv);
   auto thread = create_thread();
   cout << "Thread created" << endl;
   rb_funcall(thread, rb_intern("join"), 0);
