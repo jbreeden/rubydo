@@ -1,7 +1,7 @@
 Rubydo
 ======
 
-Convenience functions and syntax sugar for using C++ lambdas with the Ruby C API. The library is fairly small, currently consisting of a few functions for initializing ruby, obtaining/releasing the giant VM lock (GVL - or sometimes GIL for "global interpreter lock"), launching ruby threads, and defining ruby modules and classes. The use of C++ lambdas for these purposes allows for cleaner and more dynamic code than the bare C API provided by ruby.
+Convenience functions and syntax sugar for using C++ lambdas with the Ruby C API. The library is fairly small, currently  supporting initializing ruby, defining module and class, obtaining/releasing the giant VM lock (GVL - or sometimes GIL for "global interpreter lock"), and launching ruby threads. The use of C++ lambdas for these purposes allows for cleaner and more dynamic code than the bare C API provided by ruby.
 
 Goals
 -----
@@ -24,6 +24,57 @@ Initializing Ruby
 /* initializing ruby */
 rubydo::init(argc, argv);
 ```
+
+Creating Ruby Modules and Classes
+---------------------------------
+
+Rubydo allows you to dynamically create Ruby modules and classes, defining their methods with C++ lambdas. All lambdas defining methods in rubydo use the argc/argv calling convention `[](VALUE self, int argc, VALUE* argv){...}`. The API is not yet fully complete, but here are a few examples from rubydo.cpp's self-testing main method:
+
+```C++
+// Defining a class with a single method
+RubyClass rubydo_class = RubyClass::define("RubydoClass");
+rubydo_class.define_method("test_method_returns_success", [](VALUE self, int argc, VALUE* argv){
+  return rb_str_new_cstr("success");
+});
+
+// Defining a class under another class
+rubydo_class.define_class("NestedClass")
+  .define_method("nested_class_method", [](VALUE self, int argc, VALUE* argv){
+    return rb_str_new_cstr("success");
+  });
+
+// Opening an existing ruby class from the VALUE object of the class and monkey patching it with a new method
+RubyClass::define(rb_cObject)
+  .define_method("rubydo_monkey_patch_by_value", [](VALUE self, int argc, VALUE* argv){
+    return rb_str_new_cstr("success");
+  });
+
+// Opening an existing class by name and monkey patching it
+RubyClass::define("Object")
+  .define_method("rubydo_monkey_patch_by_name", [](VALUE self, int argc, VALUE* argv){
+    return rb_str_new_cstr("success");
+  });
+
+// Defining a top-level module
+auto rubydo_module = RubyModule::define("RubydoModule");
+
+// Nesting a module in another module
+rubydo_module.define_module("ModuleUnderModule");
+
+// Nesting a class in a module
+rubydo_module.define_class("ClassUnderModule");
+
+// Nesting multiple levels of mixed modules & classes
+RubyModule::define("Mod1").define_class("Class1").define_module("Mod2").define_class("Class2");
+
+// Re-opening a nested class to define a method
+RubyModule::define("Mod1").define_class("Class1").define_module("Mod2").define_class("Class2")
+  .define_method("deeply_nested_method", [](VALUE self, int argc, VALUE* argv){
+    return rb_str_new_cstr("success");
+  });
+```
+
+You can see the usage of the defined classes and methods from the ruby side in test.rb
 
 Using the GVL
 -------------
@@ -84,53 +135,3 @@ In the ruby thread
 Thread joined  
 ```
 
-Creating Ruby Modules and Classes
----------------------------------
-
-Rubydo allows you to dynamically create Ruby modules and classes, defining their methods with C++ lambdas. All lambdas defining methods in rubydo use the argc/argv calling convention `[](VALUE self, int argc, VALUE* argv){...}`. The API is not yet fully complete, but here are a few examples from rubydo.cpp's self-testing main method:
-
-```C++
-// Defining a class with a single method
-RubyClass rubydo_class = RubyClass::define("RubydoClass");
-rubydo_class.define_method("test_method_returns_success", [](VALUE self, int argc, VALUE* argv){
-  return rb_str_new_cstr("success");
-});
-
-// Defining a class under another class
-rubydo_class.define_class("NestedClass")
-  .define_method("nested_class_method", [](VALUE self, int argc, VALUE* argv){
-    return rb_str_new_cstr("success");
-  });
-
-// Opening an existing ruby class from the VALUE object of the class and monkey patching it with a new method
-RubyClass::define(rb_cObject)
-  .define_method("rubydo_monkey_patch_by_value", [](VALUE self, int argc, VALUE* argv){
-    return rb_str_new_cstr("success");
-  });
-
-// Opening an existing class by name and monkey patching it
-RubyClass::define("Object")
-  .define_method("rubydo_monkey_patch_by_name", [](VALUE self, int argc, VALUE* argv){
-    return rb_str_new_cstr("success");
-  });
-
-// Defining a top-level module
-auto rubydo_module = RubyModule::define("RubydoModule");
-
-// Nesting a module in another module
-rubydo_module.define_module("ModuleUnderModule");
-
-// Nesting a class in a module
-rubydo_module.define_class("ClassUnderModule");
-
-// Nesting multiple levels of mixed modules & classes
-RubyModule::define("Mod1").define_class("Class1").define_module("Mod2").define_class("Class2");
-
-// Re-opening a nested class to define a method
-RubyModule::define("Mod1").define_class("Class1").define_module("Mod2").define_class("Class2")
-  .define_method("deeply_nested_method", [](VALUE self, int argc, VALUE* argv){
-    return rb_str_new_cstr("success");
-  });
-```
-
-You can see the usage of the defined classes and methods from the ruby side in test.rb
