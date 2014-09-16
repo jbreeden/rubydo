@@ -84,8 +84,8 @@ In the ruby thread
 Thread joined  
 ```
 
-Creating Ruby Modules and Class
--------------------------------
+Creating Ruby Modules and Classes
+---------------------------------
 
 Rubydo allows you to dynamically create Ruby modules and classes, defining their methods with C++ lambdas. All lambdas defining methods in rubydo use the argc/argv calling convention `[](VALUE self, int argc, VALUE* argv){...}`. The API is not yet fully complete, but here are a few examples from rubydo.cpp's self-testing main method:
 
