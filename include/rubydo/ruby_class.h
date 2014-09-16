@@ -19,8 +19,6 @@ namespace rubydo {
     RubyClass (VALUE rb_class);
     RubyClass (std::string name, VALUE superclass = rb_cObject);
     RubyClass (VALUE outter_module, std::string name, VALUE superclass = rb_cObject);
-    
-  private:
     virtual void rb_define_self();
   };
 }

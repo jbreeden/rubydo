@@ -24,7 +24,9 @@ namespace rubydo {
     
     RubyModule define_module(std::string name);
     RubyClass define_class(std::string name, VALUE superclass = rb_cObject);
-    void define_method(std::string name, rubydo::Method method_implementation);
+    
+    // define_method returns the ruby module to allow method chaining
+    RubyModule& define_method(std::string name, rubydo::Method method_implementation);
     void define_singleton_method(std::string name, rubydo::Method method_implementation);
     
     VALUE get_method_lookup_table();

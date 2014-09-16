@@ -167,33 +167,52 @@ namespace rubydo {
 
 #ifdef DEBUG
  using namespace std;
+ using namespace rubydo;
  
  int main(int argc, char** argv) {
   rubydo::init(argc, argv, false);
   
-  // Defining a top-level class with a method
-  auto ruby_do_test_class = rubydo::RubyClass::define("RubydoTest");
-  ruby_do_test_class.define_method("test_method_returns_success", [](VALUE self, int argc, VALUE* argv){
+  // Defining a class with a single method
+  RubyClass rubydo_class = RubyClass::define("RubydoClass");
+  rubydo_class.define_method("test_method_returns_success", [](VALUE self, int argc, VALUE* argv){
     return rb_str_new_cstr("success");
   });
   
-  // Defining a class under another class, with a method of it's own
-  auto nested_class = ruby_do_test_class.define_class("NestedClass");
-  nested_class.define_method("nested_class_method", [](VALUE self, int argc, VALUE* argv){
-    return rb_str_new_cstr("success");
-  });
+  // Defining a class under another class
+  rubydo_class.define_class("NestedClass")
+    .define_method("nested_class_method", [](VALUE self, int argc, VALUE* argv){
+      return rb_str_new_cstr("success");
+    });
   
   // Opening an existing ruby class from the VALUE object of the class and monkey patching it with a new method
-  auto object_class = rubydo::RubyClass::define(rb_cObject);
-  object_class.define_method("rubydo_monkey_patch_by_value", [](VALUE self, int argc, VALUE* argv){
-    return rb_str_new_cstr("success");
-  });
+  RubyClass::define(rb_cObject)
+    .define_method("rubydo_monkey_patch_by_value", [](VALUE self, int argc, VALUE* argv){
+      return rb_str_new_cstr("success");
+    });
   
   // Opening an existing class by name and monkey patching it
-  auto object_class_2 = rubydo::RubyClass::define("Object");
-  object_class_2.define_method("rubydo_monkey_patch_by_name", [](VALUE self, int argc, VALUE* argv){
-    return rb_str_new_cstr("success");
-  });
+  RubyClass::define("Object")
+    .define_method("rubydo_monkey_patch_by_name", [](VALUE self, int argc, VALUE* argv){
+      return rb_str_new_cstr("success");
+    });
+  
+  // Defining a top-level module
+  auto rubydo_module = RubyModule::define("RubydoModule");
+  
+  // Nesting a module in another module
+  rubydo_module.define_module("ModuleUnderModule");
+  
+  // Nesting a class in a module
+  rubydo_module.define_class("ClassUnderModule");
+  
+  // Nesting multiple levels of mixed modules & classes
+  RubyModule::define("Mod1").define_class("Class1").define_module("Mod2").define_class("Class2");
+  
+  // Re-opening a nested class to define a method
+  RubyModule::define("Mod1").define_class("Class1").define_module("Mod2").define_class("Class2")
+    .define_method("deeply_nested_method", [](VALUE self, int argc, VALUE* argv){
+      return rb_str_new_cstr("success");
+    });
   
   cout << "Loading test.rb" << endl;
   rb_require("./test.rb");

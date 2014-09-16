@@ -117,7 +117,7 @@ namespace rubydo {
     return RubyClass::define(self, name, superclass);
   }
 
-  void 
+  RubyModule& 
   RubyModule::define_method (std::string name, Method method) {
     rb_define_method(self, name.c_str(), internal::invoke_instance_method, -1); /* -1 => send argc & argv */
     
@@ -132,6 +132,8 @@ namespace rubydo {
     VALUE lookup_table = get_method_lookup_table();
     VALUE method_name_string = rb_str_new_cstr(name.c_str());
     rb_funcall(lookup_table, rb_intern("[]="), 2, method_name_string, ruby_wrapped_method);
+    
+    return *this;
   }
 
   void 
