@@ -1,7 +1,7 @@
 Rubydo
 ======
 
-Convenience functions and syntax sugar for using C++ lambdas with the Ruby C API. The library is fairly small, currently  supporting initializing ruby, defining module and class, obtaining/releasing the giant VM lock (GVL - or sometimes GIL for "global interpreter lock"), and launching ruby threads. The use of C++ lambdas for these purposes allows for cleaner and more dynamic code than the bare C API provided by ruby.
+Convenience functions and syntax sugar for using C++ lambdas with the Ruby C API. The library is fairly small, currently  supporting initializing ruby, defining modules and classes, obtaining/releasing the giant VM lock (GVL - or sometimes GIL for "global interpreter lock"), and launching ruby threads. The use of C++ lambdas for these purposes allows for cleaner and more dynamic code than the bare C API provided by ruby.
 
 Goals
 -----
