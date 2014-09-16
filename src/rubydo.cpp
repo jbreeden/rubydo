@@ -46,18 +46,19 @@ namespace rubydo {
       // Determine method being called
       VALUE method_sym = rb_funcall(rb_mKernel, rb_intern("__method__"), 0);
       VALUE method_name = rb_funcall(method_sym, rb_intern("to_s"), 0);
+      VALUE rb_method = rb_funcall(self, rb_intern("method"), 1, method_sym);
+      VALUE rb_class = rb_funcall(rb_method, rb_intern("owner"), 0);
       
       // Retrieve method implementation from lookup table of this object's class
-      VALUE rbClass = rb_funcall(self, rb_intern("class"), 0);
-      VALUE lookup_table = rb_iv_get(rbClass, rubydo::internal::method_lookup_table_iv_name);
-      VALUE method = rb_funcall(lookup_table, rb_intern("[]"), 1, method_name);
+      VALUE lookup_table = rb_iv_get(rb_class, rubydo::internal::method_lookup_table_iv_name);
+      VALUE boxed_method_wrapper = rb_funcall(lookup_table, rb_intern("[]"), 1, method_name);
       
-      if (!RTEST(method)) {
+      if (!RTEST(boxed_method_wrapper)) {
         // TODO: Raise
       }
       
       rubydo::internal::MethodWrapper* method_wrapper_ptr;
-      Data_Get_Struct(method, rubydo::internal::MethodWrapper, method_wrapper_ptr);
+      Data_Get_Struct(boxed_method_wrapper, rubydo::internal::MethodWrapper, method_wrapper_ptr);
       
       // TODO: try/catch around this and raise a ruby exception to
       return method_wrapper_ptr->implementation(self, argc, argv);
@@ -169,9 +170,9 @@ namespace rubydo {
  
  int main(int argc, char** argv) {
   rubydo::init(argc, argv, false);
-
+  
   // Defining a top-level class with a method
-  auto ruby_do_test_class = rubydo::RubyClass("RubydoTest");
+  auto ruby_do_test_class = rubydo::RubyClass::define("RubydoTest");
   ruby_do_test_class.define_method("test_method_returns_success", [](VALUE self, int argc, VALUE* argv){
     return rb_str_new_cstr("success");
   });
@@ -183,13 +184,13 @@ namespace rubydo {
   });
   
   // Opening an existing ruby class from the VALUE object of the class and monkey patching it with a new method
-  auto object_class = rubydo::RubyClass(rb_cObject);
+  auto object_class = rubydo::RubyClass::define(rb_cObject);
   object_class.define_method("rubydo_monkey_patch_by_value", [](VALUE self, int argc, VALUE* argv){
     return rb_str_new_cstr("success");
   });
   
   // Opening an existing class by name and monkey patching it
-  auto object_class_2 = rubydo::RubyClass("Object");
+  auto object_class_2 = rubydo::RubyClass::define("Object");
   object_class_2.define_method("rubydo_monkey_patch_by_name", [](VALUE self, int argc, VALUE* argv){
     return rb_str_new_cstr("success");
   });
