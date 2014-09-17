@@ -144,12 +144,12 @@ namespace :release do
   
   task :link => %w[link_options compile] do
   desc "Link the Release artifact"
-    result = sh "ar -r Debug/#{$ARTIFACT} #{obj_files.join(' ')}"
+    result = sh "ar -r Release/#{$ARTIFACT} #{obj_files.join(' ')}"
     puts "[RAKE] Linking #{result ? "Succeeded" : "Failed"}"
   end
   
-  desc "Build the Debug configuration"
-  task :build => ["Debug", "compile", "link"]
+  desc "Build the Release configuration"
+  task :build => ["Release", "compile", "link"]
 end
 
 # Clean task

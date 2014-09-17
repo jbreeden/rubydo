@@ -20,6 +20,12 @@
 
 namespace rubydo {
 
+  void init(int argc, char** argv, bool using_std_lib);
+  void without_gvl(DO_BLOCK, DO_BLOCK);
+  void with_gvl(DO_BLOCK);
+
+#ifndef RUBYDO_NO_CONFLICTS
+
   typedef std::function<VALUE(VALUE self, int argc, VALUE* argv)> Method;
 
   namespace internal {
@@ -48,11 +54,6 @@ namespace rubydo {
     }
   }
 
-  void init(int argc, char** argv);
-  void without_gvl(DO_BLOCK, DO_BLOCK);
-  void with_gvl(DO_BLOCK);
-
-#ifndef RUBYDO_NO_CONFLICTS
   VALUE thread(DO_BLOCK);
 #endif
 }
