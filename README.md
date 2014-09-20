@@ -66,7 +66,7 @@ RubyModule rubydo_module = RubyModule::define("RubydoModule");
 RubyClass rubydo_class = RubyClass::define("RubydoClass");
 
 // Defining a singleton method on a module
-RubyClass::define("RubydoModule")
+rubydo_module
   .define_singleton_method("module_singleton_method", [](VALUE self, int argc, VALUE* argv){
     return rb_str_new_cstr("success");
   });
