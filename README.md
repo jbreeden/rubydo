@@ -25,6 +25,34 @@ Initializing Ruby
 rubydo::init(argc, argv);
 ```
 
+Using the Ruby Standard Library
+-------------------------------
+
+If you're embedding Ruby in a C++ application, instead of writing an extension, and you plan to include & use the Ruby standard library or any gems, there is a extra step in the initialization process:
+
+```C++
+/* initializing ruby */
+rubydo::init(argc, argv);
+
+/* initializing some things to make requires of libraries and gems work correctly */
+rubydo::use_ruby_standard_library();
+```
+
+To set this up, you just copy the `lib` folder from your build of Ruby into the same folder of your application's exe.
+
+Ex:
+
+```
+ApplicationFolder/
+ - app.exe
+ - lib/
+   - ruby/
+     - {VERSION_NUMBER}/
+     - gems/
+     - site_ruby/
+     - vendor_ruby/
+```
+
 Creating Ruby Modules and Classes
 ---------------------------------
 
