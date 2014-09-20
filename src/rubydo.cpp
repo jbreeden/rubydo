@@ -39,32 +39,6 @@ namespace {
 
 namespace rubydo {
 
-  namespace internal {
-    VALUE cRubydoMethod;
-  
-    VALUE invoke_instance_method(int argc, VALUE* argv, VALUE self) {
-      // Determine method being called
-      VALUE method_sym = rb_funcall(rb_mKernel, rb_intern("__method__"), 0);
-      VALUE method_name = rb_funcall(method_sym, rb_intern("to_s"), 0);
-      VALUE rb_method = rb_funcall(self, rb_intern("method"), 1, method_sym);
-      VALUE rb_class = rb_funcall(rb_method, rb_intern("owner"), 0);
-      
-      // Retrieve method implementation from lookup table of this object's class
-      VALUE lookup_table = rb_iv_get(rb_class, rubydo::internal::method_lookup_table_iv_name);
-      VALUE boxed_method_wrapper = rb_funcall(lookup_table, rb_intern("[]"), 1, method_name);
-      
-      if (!RTEST(boxed_method_wrapper)) {
-        // TODO: Raise
-      }
-      
-      rubydo::internal::MethodWrapper* method_wrapper_ptr;
-      Data_Get_Struct(boxed_method_wrapper, rubydo::internal::MethodWrapper, method_wrapper_ptr);
-      
-      // TODO: try/catch around this and raise a ruby exception to
-      return method_wrapper_ptr->implementation(self, argc, argv);
-    }
-  }
-
   // init
   // ----
   // Initializes the ruby vm, and requires a few ruby modules
@@ -75,7 +49,9 @@ namespace rubydo {
     RUBY_INIT_STACK;
     ruby_init();
     ruby_init_loadpath();
-    rubydo::internal::cRubydoMethod = rb_define_class("RubydoMethod", rb_cObject);
+    
+    RubyModule::cRubydoMethod = rb_define_class("RubydoMethod", rb_cObject);
+    
     if (using_std_lib) {
       rb_require("enc/encdb");
       rb_require("enc/trans/transdb");
@@ -172,9 +148,31 @@ namespace rubydo {
  int main(int argc, char** argv) {
   rubydo::init(argc, argv, false);
   
-  // Defining a class with a single method
+  // Defining a module
+  auto rubydo_module = RubyModule::define("RubydoModule");
+  
+  // Defining a class
   RubyClass rubydo_class = RubyClass::define("RubydoClass");
-  rubydo_class.define_method("test_method_returns_success", [](VALUE self, int argc, VALUE* argv){
+  
+  // Defining a singleton method on a module
+  RubyClass::define("RubydoModule")
+    .define_singleton_method("module_singleton_method", [](VALUE self, int argc, VALUE* argv){
+      return rb_str_new_cstr("success");
+    });
+  
+  // Defining a singleton method on a class
+  rubydo_class
+    .define_singleton_method("class_singleton_method", [](VALUE self, int argc, VALUE* argv){
+      return rb_str_new_cstr("success");
+    });
+    
+  // Defining an instance method on a class
+  rubydo_class.define_method("class_instance_method", [](VALUE self, int argc, VALUE* argv){
+    return rb_str_new_cstr("success");
+  });
+  
+  // Defining an instance method on a module
+  rubydo_module.define_method("module_instance_method", [](VALUE self, int argc, VALUE* argv){
     return rb_str_new_cstr("success");
   });
   
@@ -195,9 +193,6 @@ namespace rubydo {
     .define_method("rubydo_monkey_patch_by_name", [](VALUE self, int argc, VALUE* argv){
       return rb_str_new_cstr("success");
     });
-  
-  // Defining a top-level module
-  auto rubydo_module = RubyModule::define("RubydoModule");
   
   // Nesting a module in another module
   rubydo_module.define_module("ModuleUnderModule");

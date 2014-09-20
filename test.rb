@@ -1,25 +1,42 @@
 def test(desc)
-  print desc
-  print ": "
   if yield
-    puts "Succeeded"
+    puts "Succeeded: #{desc}"
   else
-    puts "Failed"
+    puts "Failed: #{desc}"
   end
 rescue
-  puts "Failed"
+  puts "Failed: #{desc}"
   raise
 end
 
 begin
+  test "Module definition" do
+    RubydoModule.class == Module
+  end
+
   test "Class definition" do
     RubydoClass.class == Class
   end
   
-  test "Instance method definition" do
-    ruby_do_test = RubydoClass.new
-    result = ruby_do_test.test_method_returns_success
-    result == "success"
+  test "Defining singleton method on a module" do
+    "success" == RubydoModule.module_singleton_method
+  end
+  
+  test "Defining singleton method on a class" do
+    "success" == RubydoClass.class_singleton_method
+  end
+  
+  test "Defining an instance method on a class" do
+    rubydo_object = RubydoClass.new
+    "success" == rubydo_object.class_instance_method
+  end
+  
+  test "Defining an instance method on a module" do
+    class RubydoClass
+      include RubydoModule 
+    end
+    rubydo_object = RubydoClass.new
+    "success" == rubydo_object.module_instance_method
   end
   
   test "Class nested inside class" do
@@ -28,8 +45,7 @@ begin
   
   test "Nested class instance method definition" do
     nested_class_object = RubydoClass::NestedClass.new
-    result = nested_class_object.nested_class_method
-    result == "success"
+    "success" == nested_class_object.nested_class_method
   end
   
   test "Re-opening Object class by VALUE" do
@@ -45,11 +61,7 @@ begin
   test "Inheriting rubydo class instance method" do
     class Subclass < RubydoClass; end
     s = Subclass.new
-    s.test_method_returns_success == "success"
-  end
-  
-  test "Module definition" do
-    RubydoModule.class == Module
+    "success" == s.class_instance_method
   end
   
   test "Class definition under module" do

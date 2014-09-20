@@ -25,28 +25,10 @@ namespace rubydo {
   void with_gvl(DO_BLOCK);
 
 #ifndef RUBYDO_NO_CONFLICTS
-
-  typedef std::function<VALUE(VALUE self, int argc, VALUE* argv)> Method;
-
-  namespace internal {
-    
-    // Internal Data
-    // ------------
-    
-    const char method_lookup_table_iv_name[] = "rubydo_methods";
-      
-    // The Ruby class that will a MethodWrapper is held in when inserted into the method lookup table
-    extern VALUE cRubydoMethod;
-    
-    // A struct type used to hold Method objects so we can Data_Wrap_Struct them
-    struct MethodWrapper {
-      Method implementation;
-    };
+namespace internal {
     
     // Internal Helper Functions
     // ------------------------
-    
-    VALUE invoke_instance_method(int argc, VALUE* argv, VALUE self);
     
     template <class PtrType>
     void deleter (PtrType ptr) {
@@ -57,5 +39,10 @@ namespace rubydo {
   VALUE thread(DO_BLOCK);
 #endif
 }
+
+#ifndef RUBYDO_NO_CONFLICTS
+#include "rubydo/ruby_module.h"
+#include "rubydo/ruby_class.h"
+#endif
 
 #endif

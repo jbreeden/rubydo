@@ -52,7 +52,7 @@ end
 # Global File Lists
 # ===========
   
-$SOURCE_FILES = FileList["./**/*.{c,cpp}"]
+$SOURCE_FILES = FileList["src/rubydo.cpp", "src/ruby_class.cpp", "src/ruby_module.cpp"]
 
 # Debug Configuration Tasks
 # ===================

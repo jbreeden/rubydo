@@ -5,9 +5,73 @@
 #include <iostream>
 
 using namespace std;
+using namespace rubydo;
+
+namespace {
+  RubyModule::MethodDetails
+  get_current_method_details (VALUE &self) {
+    RubyModule::MethodDetails result;
+    
+    VALUE method_sym = rb_funcall(rb_mKernel, rb_intern("__method__"), 0);
+    result.name = rb_funcall(method_sym, rb_intern("to_s"), 0);
+    VALUE rb_method = rb_funcall(self, rb_intern("method"), 1, method_sym);
+    result.owner = rb_funcall(rb_method, rb_intern("owner"), 0);
+    
+    return result;
+  }
+}
 
 namespace rubydo {
 
+  // Static Members
+  // --------------
+  
+  const string 
+  RubyModule::instance_method_lookup_table_iv_name = "rubydo_instance_methods";
+  
+  const string 
+  RubyModule::singleton_method_lookup_table_iv_name =  "rubydo_singleton_methods";
+  
+  VALUE 
+  RubyModule::cRubydoMethod = Qnil;
+  
+  VALUE 
+  RubyModule::invoke_instance_method(int argc, VALUE* argv, VALUE self) {
+    MethodDetails method_details = get_current_method_details(self);
+    
+    // Retrieve instance method implementation from lookup table of this object's class
+    VALUE lookup_table = rb_iv_get(method_details.owner, rubydo::RubyModule::instance_method_lookup_table_iv_name.c_str());
+    VALUE boxed_method_wrapper = rb_funcall(lookup_table, rb_intern("[]"), 1, method_details.name);
+    
+    //if (!RTEST(boxed_method_wrapper)) {
+    // TODO: Raise?
+    //}
+    
+    rubydo::RubyModule::MethodWrapper* method_wrapper_ptr;
+    Data_Get_Struct(boxed_method_wrapper, rubydo::RubyModule::MethodWrapper, method_wrapper_ptr);
+    
+    // TODO: try/catch around this and raise a ruby exception to
+    return method_wrapper_ptr->implementation(self, argc, argv);
+  }
+  
+  VALUE 
+  RubyModule::invoke_singleton_method (int argc, VALUE* argv, VALUE self) {
+    MethodDetails method_details = get_current_method_details(self);
+    
+    // Retrieve singleton method implementation from this object
+    VALUE lookup_table = rb_iv_get(self, rubydo::RubyModule::singleton_method_lookup_table_iv_name.c_str());
+    VALUE boxed_method_wrapper = rb_funcall(lookup_table, rb_intern("[]"), 1, method_details.name);
+    
+    rubydo::RubyModule::MethodWrapper* method_wrapper_ptr;
+    Data_Get_Struct(boxed_method_wrapper, rubydo::RubyModule::MethodWrapper, method_wrapper_ptr);
+    
+    // TODO: try/catch around this and raise a ruby exception to
+    return method_wrapper_ptr->implementation(self, argc, argv);
+  }
+
+  // Instance Members
+  // ----------------
+  
   // Constructs a RubyModule from an existing ruby module object.
   // Initializes the method lookup table if it doesn't exist.
   RubyModule::RubyModule (VALUE rb_module) {
@@ -15,9 +79,7 @@ namespace rubydo {
     VALUE name = rb_funcall(rb_module, rb_intern("name"), 0); 
     this->name = std::string(StringValuePtr(name));
     
-    if (!RTEST(get_method_lookup_table())) {
-      init_method_lookup_table();
-    }
+    init_lookup_tables();
   }
   
   RubyModule
@@ -79,9 +141,7 @@ namespace rubydo {
       rb_define_self();
     }
     
-    if (!RTEST(get_method_lookup_table())) {
-      init_method_lookup_table();
-    }
+    init_lookup_tables();
   }
   
   void
@@ -94,15 +154,37 @@ namespace rubydo {
     }
   }
 
+  void
+  RubyModule::init_lookup_tables () {
+    if (!RTEST(get_instance_method_lookup_table())) {
+      init_instance_method_lookup_table();
+    }
+    
+    if (!RTEST(get_singleton_method_lookup_table())) {
+      init_singleton_method_lookup_table();
+    }
+  }
+  
   void 
-  RubyModule::init_method_lookup_table () {
+  RubyModule::init_instance_method_lookup_table () {
     VALUE lookup_table = rb_funcall(rb_cHash, rb_intern("new"), 0);
-    rb_iv_set(self, internal::method_lookup_table_iv_name, lookup_table);
+    rb_iv_set(self, RubyModule::instance_method_lookup_table_iv_name.c_str(), lookup_table);
+  }
+  
+  void 
+  RubyModule::init_singleton_method_lookup_table () {
+    VALUE lookup_table = rb_funcall(rb_cHash, rb_intern("new"), 0);
+    rb_iv_set(self, RubyModule::singleton_method_lookup_table_iv_name.c_str(), lookup_table);
   }
 
   VALUE 
-  RubyModule::get_method_lookup_table () {
-    return rb_iv_get(self, internal::method_lookup_table_iv_name);
+  RubyModule::get_instance_method_lookup_table () {
+    return rb_iv_get(self, RubyModule::instance_method_lookup_table_iv_name.c_str());
+  }
+  
+  VALUE 
+  RubyModule::get_singleton_method_lookup_table () {
+    return rb_iv_get(self, RubyModule::singleton_method_lookup_table_iv_name.c_str());
   }
   
   RubyModule
@@ -119,26 +201,40 @@ namespace rubydo {
 
   RubyModule& 
   RubyModule::define_method (std::string name, Method method) {
-    rb_define_method(self, name.c_str(), internal::invoke_instance_method, -1); /* -1 => send argc & argv */
+    rb_define_method(self, name.c_str(), RubyModule::invoke_instance_method, -1); /* -1 => send argc & argv */
     
     // Wrap implementation in struct
-    internal::MethodWrapper* method_wrapper_ptr = new internal::MethodWrapper();
+    RubyModule::MethodWrapper* method_wrapper_ptr = new RubyModule::MethodWrapper();
     method_wrapper_ptr->implementation = method;
     
     // Box MethodWrapper stuct in Ruby object
-    VALUE ruby_wrapped_method = Data_Wrap_Struct(internal::cRubydoMethod, NULL, internal::deleter<internal::MethodWrapper*>, method_wrapper_ptr);
+    VALUE ruby_wrapped_method = Data_Wrap_Struct(RubyModule::cRubydoMethod, NULL, internal::deleter<RubyModule::MethodWrapper*>, method_wrapper_ptr);
     
     // Add method to lookup table for self
-    VALUE lookup_table = get_method_lookup_table();
+    VALUE lookup_table = get_instance_method_lookup_table();
     VALUE method_name_string = rb_str_new_cstr(name.c_str());
     rb_funcall(lookup_table, rb_intern("[]="), 2, method_name_string, ruby_wrapped_method);
     
     return *this;
   }
 
-  void 
-  RubyModule::define_singleton_method (std::string name, Method method_implementation) {
-
+  RubyModule& 
+  RubyModule::define_singleton_method (std::string name, Method method) {
+    rb_define_singleton_method(self, name.c_str(), RubyModule::invoke_singleton_method, -1); /* -1 => send argc & argv */
+    
+    // Wrap implementation in struct
+    RubyModule::MethodWrapper* method_wrapper_ptr = new RubyModule::MethodWrapper();
+    method_wrapper_ptr->implementation = method;
+    
+    // Box MethodWrapper stuct in Ruby object
+    VALUE ruby_wrapped_method = Data_Wrap_Struct(RubyModule::cRubydoMethod, NULL, internal::deleter<RubyModule::MethodWrapper*>, method_wrapper_ptr);
+    
+    // Add method to lookup table for self
+    VALUE lookup_table = get_singleton_method_lookup_table();
+    VALUE method_name_string = rb_str_new_cstr(name.c_str());
+    rb_funcall(lookup_table, rb_intern("[]="), 2, method_name_string, ruby_wrapped_method);
+    
+    return *this;
   }
   
 }

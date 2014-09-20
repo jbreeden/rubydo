@@ -2,6 +2,7 @@
 #define RUBYCLASS_H
 
 #include "ruby.h"
+#include "rubydo.h"
 #include "rubydo/ruby_module.h"
 #include <string>
 #include <functional>
