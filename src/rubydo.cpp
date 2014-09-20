@@ -149,7 +149,7 @@ namespace rubydo {
   rubydo::init(argc, argv, false);
   
   // Defining a module
-  auto rubydo_module = RubyModule::define("RubydoModule");
+  RubyModule rubydo_module = RubyModule::define("RubydoModule");
   
   // Defining a class
   RubyClass rubydo_class = RubyClass::define("RubydoClass");
