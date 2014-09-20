@@ -20,7 +20,8 @@
 
 namespace rubydo {
 
-  void init(int argc, char** argv, bool using_std_lib);
+  void init(int argc, char** argv);
+  void use_ruby_standard_library();
   void without_gvl(DO_BLOCK, DO_BLOCK);
   void with_gvl(DO_BLOCK);
 

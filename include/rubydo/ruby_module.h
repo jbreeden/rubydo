@@ -11,7 +11,7 @@ namespace rubydo {
   
   
   class RubyModule {
-    friend void rubydo::init(int argc, char** argv, bool using_std_lib);
+    friend void rubydo::init(int argc, char** argv);
   
     // Nested Types
     // -------------

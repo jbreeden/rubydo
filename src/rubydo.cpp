@@ -41,21 +41,29 @@ namespace rubydo {
 
   // init
   // ----
-  // Initializes the ruby vm, and requires a few ruby modules
-  // needed to allow some of the standard libraries to load correctly.
+  // Initializes the ruby vm, and some internal rubydo state
   // ----
-  void init(int argc, char** argv, bool using_std_lib) {
+  void 
+  init (int argc, char** argv) {
     ruby_sysinit(&argc, &argv);
     RUBY_INIT_STACK;
     ruby_init();
     ruby_init_loadpath();
     
+    // Initialize the ruby class used to box Method objects in.
     RubyModule::cRubydoMethod = rb_define_class("RubydoMethod", rb_cObject);
-    
-    if (using_std_lib) {
-      rb_require("enc/encdb");
-      rb_require("enc/trans/transdb");
-    }
+  }
+  
+  // use_ruby_standard_library
+  // -------------------------
+  // If you're packaging the ruby standard libraries with your application,
+  // and expecting to require libs and gems, this function will initializes
+  // some things required to make sure your require statements work correctly.
+  // -------------------------
+  void 
+  use_ruby_standard_library () {
+    rb_require("enc/encdb");
+    rb_require("enc/trans/transdb");
   }
 
   // without_gvl
@@ -77,7 +85,8 @@ namespace rubydo {
   //    /* Now that we have the GVL again, it's safe to call ruby methods */
   //    rb_funcall(rb_mKernel, rb_intern("puts"), 1, result);
   // -----------
-  void without_gvl(DO_BLOCK func, DO_BLOCK ubf) {
+  void 
+  without_gvl(DO_BLOCK func, DO_BLOCK ubf) {
     rb_thread_call_without_gvl(invoke_returning_null_ptr, &func, invoke, &ubf);
   }
 
@@ -146,7 +155,7 @@ namespace rubydo {
  using namespace rubydo;
  
  int main(int argc, char** argv) {
-  rubydo::init(argc, argv, false);
+  rubydo::init(argc, argv);
   
   // Defining a module
   RubyModule rubydo_module = RubyModule::define("RubydoModule");
@@ -155,7 +164,7 @@ namespace rubydo {
   RubyClass rubydo_class = RubyClass::define("RubydoClass");
   
   // Defining a singleton method on a module
-  RubyClass::define("RubydoModule")
+  rubydo_module
     .define_singleton_method("module_singleton_method", [](VALUE self, int argc, VALUE* argv){
       return rb_str_new_cstr("success");
     });
