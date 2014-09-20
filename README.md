@@ -31,9 +31,31 @@ Creating Ruby Modules and Classes
 Rubydo allows you to dynamically create Ruby modules and classes, defining their methods with C++ lambdas. All lambdas defining methods in rubydo use the argc/argv calling convention `[](VALUE self, int argc, VALUE* argv){...}`. The API is not yet fully complete, but here are a few examples from rubydo.cpp's self-testing main method:
 
 ```C++
-// Defining a class with a single method
+// Defining a module
+auto rubydo_module = RubyModule::define("RubydoModule");
+
+// Defining a class
 RubyClass rubydo_class = RubyClass::define("RubydoClass");
-rubydo_class.define_method("test_method_returns_success", [](VALUE self, int argc, VALUE* argv){
+
+// Defining a singleton method on a module
+RubyClass::define("RubydoModule")
+  .define_singleton_method("module_singleton_method", [](VALUE self, int argc, VALUE* argv){
+    return rb_str_new_cstr("success");
+  });
+
+// Defining a singleton method on a class
+rubydo_class
+  .define_singleton_method("class_singleton_method", [](VALUE self, int argc, VALUE* argv){
+    return rb_str_new_cstr("success");
+  });
+  
+// Defining an instance method on a class
+rubydo_class.define_method("class_instance_method", [](VALUE self, int argc, VALUE* argv){
+  return rb_str_new_cstr("success");
+});
+
+// Defining an instance method on a module
+rubydo_module.define_method("module_instance_method", [](VALUE self, int argc, VALUE* argv){
   return rb_str_new_cstr("success");
 });
 
@@ -54,9 +76,6 @@ RubyClass::define("Object")
   .define_method("rubydo_monkey_patch_by_name", [](VALUE self, int argc, VALUE* argv){
     return rb_str_new_cstr("success");
   });
-
-// Defining a top-level module
-auto rubydo_module = RubyModule::define("RubydoModule");
 
 // Nesting a module in another module
 rubydo_module.define_module("ModuleUnderModule");
