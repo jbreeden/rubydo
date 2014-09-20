@@ -32,7 +32,7 @@ Rubydo allows you to dynamically create Ruby modules and classes, defining their
 
 ```C++
 // Defining a module
-auto rubydo_module = RubyModule::define("RubydoModule");
+RubyModule rubydo_module = RubyModule::define("RubydoModule");
 
 // Defining a class
 RubyClass rubydo_class = RubyClass::define("RubydoClass");
