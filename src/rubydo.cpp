@@ -11,6 +11,8 @@
 // Helper functions
 // ----------------
 namespace {
+
+  thread_local bool thread_has_gvl = true;
   
   void invoke(void* arg) {
     if (arg != NULL) {
@@ -87,12 +89,15 @@ namespace rubydo {
   // -----------
   void 
   without_gvl(DO_BLOCK func, DO_BLOCK ubf) {
+    thread_has_gvl = false;
     rb_thread_call_without_gvl(invoke_returning_null_ptr, &func, invoke, &ubf);
   }
 
   // with_gvl
   // --------
-  // Obtains the GVL, executes the given DO_BLOCK `func`, and releases the GVL
+  // Obtains the GVL, executes the given DO_BLOCK `func`, and releases the GVL.
+  // Unlike the native rb_thread_call_with_gvl, this function is re-entrant, and
+  // will only try to obtain the GVL if the current thread does not have it already.
   //
   // EXAMPLE:
   //
@@ -104,7 +109,12 @@ namespace rubydo {
   //    } END;
   // --------
   void with_gvl(DO_BLOCK func) {
-    rb_thread_call_with_gvl(invoke_returning_null_ptr, &func);
+    if (!thread_has_gvl){
+      thread_has_gvl = true;
+      rb_thread_call_with_gvl(invoke_returning_null_ptr, &func);
+    } else {
+      (*func)();
+    }
   }
 
   // rb_do_thread
