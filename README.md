@@ -145,6 +145,8 @@ rubydo::without_gvl( DO [&](){
 rb_funcall(rb_mKernel, rb_intern("puts"), 1, result);
 ```
 
+Note: `rubydo::with_gvl` delegates to the `rb_thread_call_with_gvl` function, which will cause an error if called from a thread that already has the GVL. For this reason, rubydo tracks the GVL status in a thread local variable, allowing `rubydo::with_gvl` to execute the provided block directly if the thread already has the GVL, and delegating to `rb_thread_call_with_gvl` only if required. Mixing these calls with calls directly to the GVL functions provided by ruby is discouraged, and may cause errors.
+
 Launching a Ruby Thread
 -----------------------
 
