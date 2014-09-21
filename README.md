@@ -56,7 +56,7 @@ ApplicationFolder/
 Creating Ruby Modules and Classes
 ---------------------------------
 
-Rubydo allows you to dynamically create Ruby modules and classes, defining their methods with C++ lambdas. All lambdas defining methods in rubydo use the argc/argv calling convention `[](VALUE self, int argc, VALUE* argv){...}`. The API is not yet fully complete, but here are a few examples from rubydo.cpp's self-testing main method:
+Rubydo allows you to dynamically create Ruby modules and classes, defining their methods with C++ lambdas. All lambdas defining methods in rubydo use the argc/argv calling convention `[](VALUE self, int argc, VALUE* argv){...}`. There is not yet any real documentation, but here are the examples from rubydo.cpp's self-testing main method:
 
 ```C++
 // Defining a module
@@ -66,7 +66,7 @@ RubyModule rubydo_module = RubyModule::define("RubydoModule");
 RubyClass rubydo_class = RubyClass::define("RubydoClass");
 
 // Defining a singleton method on a module
-RubyClass::define("RubydoModule")
+rubydo_module
   .define_singleton_method("module_singleton_method", [](VALUE self, int argc, VALUE* argv){
     return rb_str_new_cstr("success");
   });
