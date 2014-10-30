@@ -76,7 +76,7 @@ rubydo_class
   .define_singleton_method("class_singleton_method", [](VALUE self, int argc, VALUE* argv){
     return rb_str_new_cstr("success");
   });
-  
+
 // Defining an instance method on a class
 rubydo_class.define_method("class_instance_method", [](VALUE self, int argc, VALUE* argv){
   return rb_str_new_cstr("success");
@@ -125,21 +125,21 @@ You can see the usage of the defined classes and methods from the ruby side in t
 
 Using the GVL
 -------------
-  
+
 ```C++
 VALUE result;
-rubydo::without_gvl( DO [&](){
+rubydo::without_gvl([&](){
   /* GVL is released, this code will execute in parallel to any other ruby threads */
-  
+
   /* Doing some heavy computation... */
-  
+
   /* Need to call a ruby method, grab the GVL */
-  rubydo::with_gvl DO [&]() {
+  rubydo::with_gvl([&]() {
     rb_funcall(rb_mKernel, rb_intern("puts"), 1, some_rb_string);
-  } END;
-  
+  });
+
   result = some_rb_string;
-} END, DO [](){ /* unblock */ } END);
+}, [](){ /* unblock */ });
 
 /* Now that we have the GVL again, it's safe to call ruby methods */
 rb_funcall(rb_mKernel, rb_intern("puts"), 1, result);
@@ -155,14 +155,10 @@ VALUE create_thread () {
   cout << "In create_thread" << endl;
   VALUE message = rb_str_new_cstr("In the ruby thread");
 
-  /* The DO block creates a shared_ptr to a new std::function,
-     so even if this method returns before the new thread is scheduled,
-     the lambda will still exist. Once the thread exists, it releases
-     it's copy of the shared_ptr */
-  VALUE thread = rubydo::thread DO [&, message] () {
+  VALUE thread = rubydo::thread([&, message] () {
    rb_funcall(rb_mKernel, rb_intern("puts"), 1, message);
-  } END;
-  
+  });
+
   return thread;
 }
 
@@ -183,4 +179,3 @@ Thread created
 In the ruby thread  
 Thread joined  
 ```
-

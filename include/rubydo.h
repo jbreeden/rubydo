@@ -14,16 +14,14 @@
 
 // DO_BLOCK Macros
 // TODO: Could probably do this without the shared_pts's
-#define DO_BLOCK std::shared_ptr<std::function<void()>>
-#define DO (DO_BLOCK(new std::function<void()>(
-#define END )))
+#define RUBYDO_BLOCK std::function<void()>
 
 namespace rubydo {
 
   void init(int argc, char** argv);
   void use_ruby_standard_library();
-  void without_gvl(DO_BLOCK, DO_BLOCK);
-  void with_gvl(DO_BLOCK);
+  void without_gvl(RUBYDO_BLOCK, RUBYDO_BLOCK);
+  void with_gvl(RUBYDO_BLOCK);
 
 #ifndef RUBYDO_NO_CONFLICTS
 namespace internal {
@@ -37,7 +35,7 @@ namespace internal {
     }
   }
 
-  VALUE thread(DO_BLOCK);
+  VALUE thread(RUBYDO_BLOCK);
 #endif
 }
 
